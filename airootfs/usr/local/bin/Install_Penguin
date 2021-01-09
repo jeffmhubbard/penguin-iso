@@ -1,6 +1,0 @@
-#!/bin/sh
-curl -sL git.io/Je83b | bash -s -- --fetch
-
-if [ -f fini.sh ]; then
-    bash fini.sh
-fi

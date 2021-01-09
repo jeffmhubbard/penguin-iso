@@ -4,5 +4,4 @@ For Wi-Fi, authenticate to the wireless network using the [32mwifi-menu[0m or 
 Ethernet and Wi-Fi connections using DHCP should work automatically.
 
 After connecting to the internet, you can start the installation by running
-the [32mInstall_Penguin[0m command. This command will fetch and execute
-the [32mfini[0m install script.
+the [32mfini[0m command.
