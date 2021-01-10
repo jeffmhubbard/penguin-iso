@@ -1,0 +1,14 @@
+To install [35;1mPenguin[0m, you must be connected to the internet!
+
+For Wi-Fi, authenticate to the wireless network using the [32mwifi-menu[0m or [32miwctl[0m utilities.
+Ethernet and Wi-Fi connections using DHCP should work automatically.
+
+Once you have a connection, you can start the installation by running
+the [32minstall.zsh[0m install script.
+
+You can also follow the [38;2;23;147;209mArch Linux[0m installation guide:
+https://wiki.archlinux.org/index.php/Installation_guide
+
+After connecting to the internet, the installation guide can be accessed
+via the convenience script [35mInstallation_guide[0m.
+

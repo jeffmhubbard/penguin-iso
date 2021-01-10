@@ -1,7 +1,0 @@
-To install [35;1mPenguin[0m, you must be connected to the internet!
-
-For Wi-Fi, authenticate to the wireless network using the [32mwifi-menu[0m or [32miwctl[0m utilities.
-Ethernet and Wi-Fi connections using DHCP should work automatically.
-
-After connecting to the internet, you can start the installation by running
-the [32mfini[0m command.
