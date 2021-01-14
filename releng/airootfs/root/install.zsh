@@ -4,12 +4,6 @@
 
 ###############################################################################
 
-# WILL USE ENTIRE DISK
-rootdev=/dev/sda
-
-# mount point for chroot
-chroot=/mnt
-
 # settings for new systems
 newuser="spider"
 hostname=$(uname -n)
@@ -32,11 +26,11 @@ packages=(
 # overwrites $packages, make sure you have what you need
 custom=${0:A:h}/packages.txt
 
-# settings for post-install
-repo="custom"
-repodir="$HOME/Packages"
-build=${0:A:h}/build.txt
-pkgbuilds="https://github.com/jeffmhubbard/penguin-packages"
+# WILL USE ENTIRE DISK
+rootdev=/dev/sda
+
+# mount point for chroot
+chroot=/mnt
 
 ###############################################################################
 
@@ -63,37 +57,56 @@ function stage1 {
   timedatectl set-ntp true
 
   echo "${m}Preparing disk...${n}"
+  # mbr, all for /
   parted --script $rootdev \
-    mklabel gpt \
-    mkpart primary 1MiB 260MiB \
-    set 1 esp on \
-    mkpart primary 260MiB 4356MiB \
-    mkpart primary 4356MiB 100%
+    mklabel msdos \
+    mkpart primary 1MiB 100% \
+    set 1 boot on
 
-  local boot="${rootdev}1"
-  local swap="${rootdev}2"
-  local root="${rootdev}3"
+  local root="${rootdev}1"
+
+  ## efi, 260mb esp, 4gb swap, rest for /
+  #parted --script $rootdev \
+  #  mklabel gpt \
+  #  mkpart primary 1MiB 260MiB \
+  #  set 1 esp on \
+  #  mkpart primary 260MiB 4356MiB \
+  #  mkpart primary 4356MiB 100%
+
+  #local boot="${rootdev}1"
+  #local swap="${rootdev}2"
+  #local root="${rootdev}3"
 
   echo "${m}Formatting partitions...${n}"
-  mkfs.vfat $boot
-  mkfs.f2fs -f $root
-  mkswap $swap
+  # mbr
+  mkfs.ext4 $root
+
+  ## efi
+  #mkfs.vfat $boot
+  #mkfs.f2fs -f $root
+  #mkswap $swap
 
   echo "${m}Mounting partitions...${n}"
+  # mbr
   mkdir -p $chroot
   mount $root $chroot
-  mkdir -p $chroot/boot
-  mount $boot $chroot/boot
-  swapon $swap
+
+  ## efi
+  #mkdir -p $chroot
+  #mount $root $chroot
+  #mkdir -p $chroot/boot
+  #mount $boot $chroot/boot
+  #swapon $swap
+
   sync
 
   unset boot swap root
 
-#  echo "${m}Tweak pacman config...${n}"
-#  sed -i "/Color/s/^#//
-#    /TotalDownload/s/^#//
-#    /CheckSpace/s/^#//" \
-#    /etc/pacman.conf
+  echo "${m}Tweak pacman config...${n}"
+  sed -i "/Color/s/^#//
+    /TotalDownload/s/^#//
+    /CheckSpace/s/^#//" \
+    /etc/pacman.conf
 
   echo "${m}Update pacman mirrors...${n}"
   reflector \
@@ -200,11 +213,16 @@ function stage2 {
 #EOF
 
   echo "${m}Configuring bootloader...${n}"
+  # MBR
   grub-install \
-    --target=x86_64-efi \
-    --efi-directory=/boot \
-    --recheck \
+    --target=i386-pc \
     $rootdev
+  ## EFI
+  #grub-install \
+  #  --target=x86_64-efi \
+  #  --efi-directory=/boot \
+  #  --recheck \
+  #  $rootdev
   grub-mkconfig -o /boot/grub/grub.cfg
 
   if [[ -n $newuser ]]
@@ -225,90 +243,6 @@ function stage2 {
   return
 }
 
-# stage3 installs aurutils and packages
-function stage3 {
-
-  echo "${m}Building extra software from AUR and git repo${n}"
-
-  [[ $user == 0 ]] && { echo "${e}Don't run as root!${n}"; exit 1 }
-
-  echo "${m}Checking for aurutils...${n}"
-  if (( ! $+commands[aur] ))
-  then
-    echo "${i}Installing aurutils...${n}"
-    local url="https://aur.archlinux.org/aurutils"
-    local temp=$(mktemp -d)
-
-    git clone $url $temp
-    cd $temp
-    makepkg -sric --noconfirm --skippgpcheck --needed
-    cd ${script:A:h}
-    rm -rf $temp
-
-    unset temp
-  fi
-
-  echo "${m}Setting up repo '${i}$repo${m}'${n}"
-  mkdir -p $repodir
-  cd $repodir
-  repo-add -q $repo.db.tar
-  cd ${script:A:h}
-
-  local userconf=$HOME/.pacman.conf
-  local sysconf=/etc/pacman.conf
-
-  echo "${m}Writing $userconf...${n}"
-  echo "[${repo}]" >! $userconf
-  echo "SigLevel = Optional TrustAll" >> $userconf
-  echo "Server = file://$repodir" >> $userconf
-
-  echo "${m}Writing $sysconf...${n}"
-  echo "Include = $userconf" | \
-    sudo tee -a $sysconf >/dev/null
-
-  unset userconf sysconf
-
-  echo "${m}Update pacman cache...${n}"
-  sudo pacman -Sy
-
-  echo "${m}Checking for build.txt...${n}"
-  if [[ -f $build ]]
-  then
-    echo "${i}Processing build list...${n}"
-    local -a pkg
-
-    while read -r pkg
-    do
-      pacman -Q $pkg &>/dev/null && continue
-      aur sync --no-view --noconfirm $pkg
-    done < $build
-  fi
-
-  unset pkg
-
-  echo "${m}Checking for git repo...${n}"
-  if [[ -n $pkgbuilds ]]
-  then
-    echo "${i}Building git repo '${i}$pkgbuilds${m}'${n}"
-    local temp=$(mktemp -d)
-    local src
-    git clone $pkgbuilds $temp
-
-    setopt nullglob
-    for src in $temp/*(/)
-    do
-      cd $src
-      aur build -f -- -sric --noconfirm
-    done
-
-    rm -rf $temp
-    unsetopt nullglob
-    unset temp src
-  fi
-
-  echo "${m}Done${n}"
-}
-
 # for color output
 m='\033[1;37m'  # msg, yellow
 i='\033[1;33m'  # info, white
@@ -322,7 +256,6 @@ case $1 in
     echo
     echo "Arguments:"
     echo "  -wp | --write-pkglist     write defaults to packages.txt for editing"
-    echo "  -ps | --post-install      run stage3, install aurutils, pkgbuilds"
     echo "  -h  | --help              this help message"
     echo
     exit 0
@@ -333,10 +266,6 @@ case $1 in
     do
       echo $pkg >> $custom
     done
-    exit 0
-  ;;
-  -ps | --post-install)
-    stage3
     exit 0
   ;;
   --chroot)
