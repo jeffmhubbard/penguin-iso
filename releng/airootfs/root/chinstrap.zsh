@@ -318,7 +318,7 @@ function stage2 {
 
 
 function finish_prompt() {
-  if read -q REPLY\?"Would you like to reboot now? (y/n)"
+  if read -q REPLY\?"Would you like to reboot now? (y/n)\n"
   then
     reboot
   else
