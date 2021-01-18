@@ -1,10 +1,12 @@
-# penguin-iso
+# penguin iso
 
-`mkarchiso` profile for generating ***Penguin*** install ISO
+`mkarchiso` configs of generating [Penguin](https://penguin.fyi) Live images
 
 ## Usage
-```
+
+```sh
 cd $WORKINGDIR
-git clone https://code.linuxit.us/penguin-iso
-sudo mkarchiso -v penguin-iso/releng
+git clone https://git.linuxit.us/penguin/iso pengiso
+sudo mkarchiso -v pengiso/releng
 ```
+
