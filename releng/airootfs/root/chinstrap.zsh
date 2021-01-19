@@ -66,11 +66,11 @@ rootdev=/dev/sda
 ## INTERNAL VARIABLES (do not edit)
 script=$0
 
+# custom package list, overwrites $packages
+custom=${script:A:h}/packages.txt
+
 # mount point for chroot
 chroot=/mnt
-
-# custom package list, overwrites $packages
-custom=${0:A:h}/packages.txt
 
 # for color output
 m='\033[1;37m'  # msg, yellow
@@ -318,11 +318,11 @@ function stage2 {
 
 
 function finish_prompt() {
-  if read -q REPLY\?"Would you like to reboot now? (y/n)\n"
+  if read -q REPLY\?"Would you like to reboot now? (y/n)"
   then
     reboot
   else
-    echo "${m}Continuing with live system, reboot when ready!${n}"
+    echo "\n${m}Continuing with live system, reboot when ready!${n}"
   fi
 }
 
