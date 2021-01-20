@@ -11,10 +11,12 @@ broadcom-wl
 btrfs-progs
 clonezilla
 crda
+curl
 darkhttpd
 ddrescue
 dhclient
 dhcpcd
+dialog
 diffutils
 dmraid
 dnsmasq
@@ -27,6 +29,7 @@ exfatprogs
 f2fs-tools
 fatresize
 fsarchiver
+git
 gnu-netcat
 gpart
 gpm
