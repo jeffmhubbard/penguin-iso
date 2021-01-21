@@ -48,6 +48,10 @@ packages+=(linux)
 #packages+=(linux-zen)
 #packages+=(linux-hardened)
 
+# microcode
+#packages+=(amd-ucode)
+#packages+=(intel-ucode)
+
 # video drivers
 packages+=(xorg-drivers)
 #packages+=(nvidia)
@@ -84,6 +88,14 @@ function stage1 {
 
   echo "${m}${script:t} - $(date)${n}"
 
+  echo "${m}Verifying boot mode...${n}"
+  if test -d /sys/firmware/efi/efivars
+  then
+    echo "${i}UEFI detected!${i}"
+  else
+    echo "${i}BIOS detected!${i}"
+  fi
+
   echo "${m}Testing network connection...${n}"
   if ping -4 -c 1 -w 5 penguin.fyi &>/dev/null
   then
@@ -91,6 +103,7 @@ function stage1 {
     timedatectl set-ntp true
   else
     echo "${e}ERROR: Network check failed!${n}"
+    echo "${i}Aborting!${i}"
     exit 1
   fi
 
@@ -102,56 +115,59 @@ function stage1 {
 ##  STAGE 1, PARTITION AND FORMAT TARGET DISK, INSTALL SOFTWARE PACKAGES     ##
 ###############################################################################
 
+  ## BIOS\MBR example
   ## PARTITION DISK (requred**)
   echo "${m}Preparing disk...${n}"
 
-  # mbr, all for /
   parted --script $rootdev \
     mklabel msdos \
     mkpart primary 1MiB 100% \
     set 1 boot on
   local root="${rootdev}1"
 
-  ## UEFI\GPT EXAMPLE
-  ## efi, 260mb esp, 4gb swap, rest for /
-  #parted --script $rootdev \
-  #  mklabel gpt \
-  #  mkpart primary 1MiB 260MiB \
-  #  set 1 esp on \
-  #  mkpart primary 260MiB 4356MiB \
-  #  mkpart primary 4356MiB 100%
-  #local boot="${rootdev}1"
-  #local swap="${rootdev}2"
-  #local root="${rootdev}3"
-
-
   ## FORMAT PARTITIONS (required**)
   echo "${m}Formatting partitions...${n}"
 
-  # mbr
   mkfs.ext4 $root
-
-  ## efi
-  #mkfs.vfat $boot
-  #mkfs.f2fs -f $root
-  #mkswap $swap
-
 
   ## MOUNT PARTITIONS (required)
   echo "${m}Mounting partitions...${n}"
 
-  # mbr
   mkdir -p $chroot
   mount $root $chroot
 
-  ## efi
-  #mkdir -p $chroot
-  #mount $root $chroot
-  #mkdir -p $chroot/boot
-  #mount $boot $chroot/boot
-  #swapon $swap
+#  ## UEFI\GPT example
+#  ## PARTITION DISK (requred**)
+#  echo "${m}Preparing disk...${n}"
+#
+#  parted --script $rootdev \
+#    mklabel gpt \
+#    mkpart primary 1MiB 260MiB \
+#    set 1 esp on \
+#    mkpart primary 260MiB 2308MiB \
+#    mkpart primary 2308MiB 100%
+#  local boot="${rootdev}1"
+#  local swap="${rootdev}2"
+#  local root="${rootdev}3"
+#
+#  ## FORMAT PARTITIONS (required**)
+#  echo "${m}Formatting partitions...${n}"
+#
+#  mkfs.vfat $boot
+#  mkfs.ext4 $root
+#  mkswap $swap
+#
+#  ## MOUNT PARTITIONS (required)
+#  echo "${m}Mounting partitions...${n}"
+#  
+#  mkdir -p $chroot
+#  mount $root $chroot
+#  mkdir -p $chroot/boot
+#  mount $boot $chroot/boot
+#  swapon $swap
 
-  sync  # required
+  # required after partition and format
+  sync 
 
   unset boot swap root
 
@@ -172,6 +188,8 @@ function stage1 {
     --age 12 \
     --sort rate \
     --save /etc/pacman.d/mirrorlist
+
+  # sync db after making changes to conf or mirrors
   pacman -Sy
 
 
@@ -193,14 +211,13 @@ function stage1 {
 
   unset line packages
 
-
-  ## GENERATE FSTAB (required)
-  echo "${m}Generating fstab...${n}"
-  genfstab -U -p $chroot > $chroot/etc/fstab
-
 ###############################################################################
 ##  ^^^^^^^^^^^^^^^^^^^^^^ EDIT ABOVE THIS LINE ^^^^^^^^^^^^^^^^^^^^^^^^^^^  ##
 ###############################################################################
+
+  # generate new fstab
+  echo "${m}Generating fstab...${n}"
+  genfstab -U -p $chroot > $chroot/etc/fstab
 
   echo "${m}Starting chroot environment...${n}"
   local script2=${script:t}
@@ -243,9 +260,9 @@ function stage2 {
 
   ## SET LOCALE (required)
   echo "${m}Setting locale to '${n}$locale${m}'${n}"
-  echo "LANG=$locale.UTF-8" > /etc/locale.conf
   sed -i "/$locale.UTF-8/s/^#//g" /etc/locale.gen
   locale-gen
+  echo "LANG=$locale.UTF-8" > /etc/locale.conf
 
 
   ## SET KEYMAP (required)
@@ -263,7 +280,7 @@ function stage2 {
   echo $hostname > /etc/hostname
 
 
-  # WRITE HOSTS FILE (optional)
+  # WRITE HOSTS FILE (required)
   echo "${m}Writing '/etc/hosts'...${n}"
   echo "127.0.0.1  localhost" > /etc/hosts
   echo "::1        localhost" >> /etc/hosts
@@ -282,16 +299,19 @@ function stage2 {
 
   ## INSTALL BOOTLOADER (required)
   echo "${m}Configuring bootloader...${n}"
-  # MBR
+
+  # BIOS\MBR
   grub-install \
     --target=i386-pc \
     $rootdev
-  ## EFI
+
+  ## UEFI\GPT
   #grub-install \
   #  --target=x86_64-efi \
   #  --efi-directory=/boot \
   #  --recheck \
   #  $rootdev
+
   grub-mkconfig -o /boot/grub/grub.cfg
 
 
@@ -299,7 +319,7 @@ function stage2 {
   if [[ -n $newuser ]]
   then
     echo "${m}Adding user '${i}$newuser${m}'${n}"
-    # wheel group privileged
+    # wheel group gets sudo NOPASSWD
     useradd -U -G wheel -m $newuser
     echo "${m}Set password for '${i}$newuser${m}'${n}"
     passwd $newuser
