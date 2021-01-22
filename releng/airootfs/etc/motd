@@ -1,6 +1,6 @@
 To install [35;1mPenguin[0m, you must be connected to the internet!
 
-For Wi-Fi, authenticate to the wireless network using the [32mwifi-menu[0m or [32miwctl[0m utilities.
+For Wi-Fi, authenticate to the wireless network using the [32miwctl[0m utility.
 Ethernet and Wi-Fi connections using DHCP should work automatically.
 
 You can start the installation by first editting, then running the [32mchinstrap.zsh[0m script
