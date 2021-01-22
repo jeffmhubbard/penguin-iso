@@ -57,7 +57,10 @@ packages+=(xorg-drivers)
 #packages+=(nvidia)
 #packages+=(vulkan-radeon)
 
-# virtualbox guest
+# laptop power management (enable service in stage2)
+#packages+=(tlp)
+
+# virtualbox guest (enable service in stage2)
 #packages+=(virtualbox-guest-utils)
 
 # WILL USE ENTIRE DISK
@@ -99,8 +102,12 @@ function stage1 {
   echo "${m}Testing network connection...${n}"
   if ping -4 -c 1 -w 5 penguin.fyi &>/dev/null
   then
+    echo "${i}OK${i}"
     echo "${m}Updating system clock...${n}"
-    timedatectl set-ntp true
+    if timedatectl set-ntp true
+    then
+      echo "${i}OK${i}"
+    fi
   else
     echo "${e}ERROR: Network check failed!${n}"
     echo "${i}Aborting!${i}"
@@ -119,9 +126,11 @@ function stage1 {
   ## PARTITION DISK (requred**)
   echo "${m}Preparing disk...${n}"
 
+  # MSDOS partition table
+  # 1 partition, ext4
   parted --script $rootdev \
     mklabel msdos \
-    mkpart primary 1MiB 100% \
+    mkpart primary ext4 1MiB 100% \
     set 1 boot on
   local root="${rootdev}1"
 
@@ -140,9 +149,11 @@ function stage1 {
 #  ## PARTITION DISK (requred**)
 #  echo "${m}Preparing disk...${n}"
 #
+#  # GPT partition table
+#  # 3 partitions, 260mb fat32 ESP, 2gb swap, remaining ext4
 #  parted --script $rootdev \
 #    mklabel gpt \
-#    mkpart primary 1MiB 260MiB \
+#    mkpart primary fat32 1MiB 260MiB \
 #    set 1 esp on \
 #    mkpart primary 260MiB 2308MiB \
 #    mkpart primary 2308MiB 100%
@@ -229,7 +240,7 @@ function stage1 {
   arch-chroot $chroot /$script2 --chroot
   rm $chroot/$script2
 
-  echo "${m}Unmounting...${n}"
+  echo "${m}Unmounting partitions...${n}"
   umount -R $chroot
   swapoff -a
 
@@ -290,11 +301,11 @@ function stage2 {
   ## ENABLE SERVICES (optional)
   # all services required by penguin-desktop automatically started
 
-  #echo "${m}Enabling SSH service...${n}"
-  #systemctl enable sshd
+#  echo "${m}Enabling TLP service...${n}"
+#  systemctl enable tlp
 
-  #echo "${m}VirtualBox guest service...${n}"
-  #systemctl enable vboxservice
+#  echo "${m}VirtualBox guest service...${n}"
+#  systemctl enable vboxservice
 
 
   ## INSTALL BOOTLOADER (required)
@@ -305,12 +316,12 @@ function stage2 {
     --target=i386-pc \
     $rootdev
 
-  ## UEFI\GPT
-  #grub-install \
-  #  --target=x86_64-efi \
-  #  --efi-directory=/boot \
-  #  --recheck \
-  #  $rootdev
+#  # UEFI\GPT
+#  grub-install \
+#    --target=x86_64-efi \
+#    --efi-directory=/boot \
+#    --recheck \
+#    $rootdev
 
   grub-mkconfig -o /boot/grub/grub.cfg
 
@@ -342,7 +353,7 @@ function finish_prompt() {
   then
     reboot
   else
-    echo "\n${m}Continuing with live system, reboot when ready!${n}"
+    echo "${m}Continuing with live system, reboot when ready!${n} "
   fi
 }
 
