@@ -39,7 +39,7 @@ timezone="America/Chicago"
 packages=(
   penguin-base
   penguin-desktop
-  penguin-defaults
+  penguin-desktop-defaults
 )
 
 # kernel
@@ -80,9 +80,9 @@ custom=${script:A:h}/packages.txt
 chroot=/mnt
 
 # for color output
-m='\033[1;37m'  # msg, yellow
-i='\033[1;33m'  # info, white
-e='\033[1;31m'  # err, red
+m='\033[7;33m'  # msg, yellow
+i='\033[7;37m'  # info, white
+e='\033[7;31m'  # err, red
 n='\033[0m'     # reset
 
 
