@@ -80,9 +80,9 @@ custom=${script:A:h}/packages.txt
 chroot=/mnt
 
 # for color output
-m='\033[7;33m'  # msg, yellow
-i='\033[7;37m'  # info, white
-e='\033[7;31m'  # err, red
+m='\033[1;35m'  # msg, magenta
+i='\033[1;32m'  # info, green
+e='\033[1;31m'  # err, red
 n='\033[0m'     # reset
 
 
