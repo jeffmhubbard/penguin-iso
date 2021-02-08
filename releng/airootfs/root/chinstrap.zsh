@@ -35,11 +35,11 @@ vcfont="default8x16"
 locale="en_US"
 timezone="America/Chicago"
 
-# install full desktop
+# install full developer desktop
 packages=(
   penguin-base
   penguin-desktop
-  penguin-desktop-defaults
+  penguin-dev-tools
 )
 
 # kernel
@@ -53,9 +53,9 @@ packages+=(linux)
 #packages+=(intel-ucode)
 
 # video drivers
-packages+=(xorg-drivers)
 #packages+=(nvidia)
 #packages+=(vulkan-radeon)
+packages+=(xorg-drivers)
 
 # laptop power management (enable service in stage2)
 #packages+=(tlp)
@@ -79,12 +79,8 @@ custom=${script:A:h}/packages.txt
 # mount point for chroot
 chroot=/mnt
 
-# for color output
-m='\033[1;35m'  # msg, magenta
-i='\033[1;32m'  # info, green
-e='\033[1;31m'  # err, red
-n='\033[0m'     # reset
-
+# color output (msg,info,err,reset)
+m='\033[1;35m'; i='\033[1;32m'; e='\033[1;31m'; n='\033[0m'
 
 ## STAGE1
 function stage1 {
@@ -94,29 +90,29 @@ function stage1 {
   echo "${m}Verifying boot mode...${n}"
   if test -d /sys/firmware/efi/efivars
   then
-    echo "${i}UEFI detected!${i}"
+    echo "${i}UEFI detected!${n}"
   else
-    echo "${i}BIOS detected!${i}"
+    echo "${i}BIOS detected!${n}"
   fi
 
   echo "${m}Testing network connection...${n}"
   if ping -4 -c 1 -w 5 penguin.fyi &>/dev/null
   then
-    echo "${i}OK${i}"
+    echo "${i}OK${n}"
     echo "${m}Updating system clock...${n}"
     if timedatectl set-ntp true
     then
-      echo "${i}OK${i}"
+      echo "${i}OK${n}"
     fi
   else
     echo "${e}ERROR: Network check failed!${n}"
-    echo "${i}Aborting!${i}"
+    echo "${i}Aborting!${n}"
     exit 1
   fi
 
-  echo "${m}This is your ${e}LAST CHANCE TO STOP${m} the installation!${n}"
-  echo "${i}Press Ctrl+c to quit or any other key to continue${n}"
-  read -k1 -s || exit 1
+  echo "${m}Are you ready to begin?${n}"
+  vared -cp "Confirm (y/n)? " ans
+  [[ "$ans" =~ ^[Yy]$ ]] || exit 1
 
 ###############################################################################
 ##  STAGE 1, PARTITION AND FORMAT TARGET DISK, INSTALL SOFTWARE PACKAGES     ##
@@ -259,7 +255,7 @@ function stage2 {
 ###############################################################################
 
   ## SET TIMEZONE (required)
-  echo "${m}Setting timezone to '${n}$timezone${m}'${n}"
+  echo "${m}Setting timezone to '${i}$timezone${m}'${n}"
   ln -sf /usr/share/zoneinfo/$timezone /etc/localtime
   hwclock --systohc --utc
 
@@ -270,29 +266,29 @@ function stage2 {
 
 
   ## SET LOCALE (required)
-  echo "${m}Setting locale to '${n}$locale${m}'${n}"
+  echo "${m}Setting locale to '${i}$locale${m}'${n}"
   sed -i "/$locale.UTF-8/s/^#//g" /etc/locale.gen
   locale-gen
   echo "LANG=$locale.UTF-8" > /etc/locale.conf
 
 
   ## SET KEYMAP (required)
-  echo "${m}Setting keymap to '${n}$keymap${m}'${n}"
+  echo "${m}Setting keymap to '${i}$keymap${m}'${n}"
   echo "KEYMAP=$keymap" > /etc/vconsole.conf
 
 
   # SET CONSOLE FONT (optional)
-  echo "${m}Setting font to '${n}$vcfont${m}'${n}"
+  echo "${m}Setting font to '${i}$vcfont${m}'${n}"
   echo "FONT=$vcfont" >> /etc/vconsole.conf
 
 
   # SET HOSTNAME (required)
-  echo "${m}Setting hostname to '${n}$hostname${m}'${n}"
+  echo "${m}Setting hostname to '${i}$hostname${m}'${n}"
   echo $hostname > /etc/hostname
 
 
   # WRITE HOSTS FILE (required)
-  echo "${m}Writing '/etc/hosts'...${n}"
+  echo "${m}Writing '${i}/etc/hosts${m}'...${n}"
   echo "127.0.0.1  localhost" > /etc/hosts
   echo "::1        localhost" >> /etc/hosts
   echo "127.0.1.1  $hostname.localdomain  $hostname" >> /etc/hosts
