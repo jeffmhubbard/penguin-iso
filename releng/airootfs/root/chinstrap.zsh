@@ -197,7 +197,7 @@ function stage1 {
     --save /etc/pacman.d/mirrorlist
 
   # sync db after making changes to conf or mirrors
-  pacman -Sy
+  pacman -Syy
 
 
   ## PACSTRAP PACKAGES (required)

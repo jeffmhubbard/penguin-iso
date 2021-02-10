@@ -7,6 +7,7 @@ iso_publisher="Penguin.FYI <https://penguin.fyi>"
 iso_application="Penguin Live/Rescue CD"
 iso_version="$(date +%Y.%m.%d)"
 install_dir="penguin"
+gpg_key="8A9EB74DE80CEDAABC612A123C2152E6699D8061"
 bootmodes=('bios.syslinux.mbr' 'bios.syslinux.eltorito' 'uefi-x64.systemd-boot.esp' 'uefi-x64.systemd-boot.eltorito')
 arch="x86_64"
 pacman_conf="pacman.conf"
