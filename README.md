@@ -1,6 +1,6 @@
-# penguin iso
+# penguin/iso
 
-`mkarchiso` configs of generating [Penguin](https://penguin.fyi) Live images
+`mkarchiso` configs of generating [Penguin Live](https://repo.penguin.fyi/iso) images
 
 ## Usage
 

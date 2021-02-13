@@ -1,13 +1,14 @@
+Welcome to [35;1mPenguin Live[0m!
+
 To install [35;1mPenguin[0m, you must be connected to the internet!
 
 For Wi-Fi, authenticate to the wireless network using the [32miwctl[0m utility.
 Ethernet and Wi-Fi connections using DHCP should work automatically.
 
-You can start the installation by first editing, then running the [32mchinstrap.zsh[0m script
+You can start the installation by first [31mEDIT[0ming, [31mTHEN[0m [31mRUN[0mning the [32mchinstrap.zsh[0m script
 in the current directory. You can also follow the [38;2;23;147;209mArch Linux[0m installation guide at
-[33;1mhttps://wiki.archlinux.org/index.php/Installation_guide[0m. Remember to [32mpacstrap[0m the
-[35;1mpenguin-desktop[0m package to install the full [35;1mPenguin Desktop[0m.
+[33;1mhttps://wiki.archlinux.org/index.php/Installation_guide[0m. Remember to [32mpacstrap[0m both
+[35;1mpenguin-base[0m and [35;1mpenguin-desktop[0m to install the full [35;1mPenguin Desktop[0m.
 
-After connecting to the internet, the installation guide can be accessed
-via the convenience script [32mInstallation_guide[0m.
+Good Luck!
 
